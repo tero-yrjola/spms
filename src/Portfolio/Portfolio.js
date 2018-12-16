@@ -1,14 +1,12 @@
 import React, {Component} from 'react';
 import {withStyles} from '@material-ui/core/styles';
-import Paper from "@material-ui/core/Paper";
 import Card from '@material-ui/core/Card';
-import Typography from "@material-ui/core/Typography";
-import Button from "@material-ui/core/Button"
 import IconButton from '@material-ui/core/IconButton';
-import Grid from '@material-ui/core/Grid';
 import DeleteIcon from '@material-ui/icons/Delete';
 import PortfolioTable from "./PortfolioTable";
 import AddStockDialog from "./AddStockDialog";
+import PortfolioHeader from "./PortfolioHeader";
+import PortfolioFooter from "./PortfolioFooter";
 
 const styles = theme => ({
     deleteButton: {
@@ -95,7 +93,7 @@ class Portfolio extends Component {
         const selectedCurrency = event.currentTarget.value;
         if (selectedCurrency === "euro")
             this.setState({eurosSelected: true});
-        else if(selectedCurrency === "dollar"){
+        else if (selectedCurrency === "dollar") {
             this.setState({eurosSelected: false});
         }
     }
@@ -131,7 +129,7 @@ class Portfolio extends Component {
 
     render() {
         const {classes, name} = this.props;
-        const {addStockDialogOpen, eurosSelected} = this.state;
+        const {addStockDialogOpen, eurosSelected, totalValue} = this.state;
         return (
             <div className={classes.portfolio}>
                 <div style={{textAlign: "right", height: "25px"}}>
@@ -140,63 +138,26 @@ class Portfolio extends Component {
                     </IconButton>
                 </div>
                 <Card className={classes.portfolioBase}>
-                    <Paper className={classes.portfolioHeader}>
-                        <Grid container>
-                            <Grid item xs={7}>
-                                <Typography noWrap variant="h6">{name}</Typography>
-                            </Grid>
-                            <Grid item xs>
-                                <Button
-                                    onClick={this.changeCurrency}
-                                    variant={eurosSelected ? "contained" : "outlined"}
-                                    value="euro"
-                                    color="primary">
-                                    €
-                                </Button>
-                            </Grid>
-                            <Grid item xs>
-                                <Button
-                                    onClick={this.changeCurrency}
-                                    variant={eurosSelected ? "outlined" : "contained"}
-                                    value="dollar"
-                                    color="primary">
-
-                                    $
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </Paper>
+                    <PortfolioHeader
+                        classes={classes}
+                        name={name}
+                        eurosSelected={eurosSelected}
+                        changeCurrency={this.changeCurrency}
+                    />
                     <div className={classes.tableWrapper}>
                         <PortfolioTable
-                            classes={this.props.classes}
+                            classes={classes}
                             stocks={this.state.rows}
                             checkMarkClick={this.checkMarkClick}
                         />
                     </div>
-                    <Paper className={classes.portfolioFooter}>
-                        <Typography variant="caption">Total value of portfolio: {this.state.totalValue}</Typography>
-                        <Grid container justify={"space-evenly"}>
-                            <Grid item>
-                                <Button
-                                    variant="contained"
-                                    onClick={() => this.setState({addStockDialogOpen: true})}>
-                                    add stock
-                                </Button>
-                            </Grid>
-                            <Grid item>
-                                <Button variant="contained">perf. Graph</Button>
-                            </Grid>
-                            <Grid item>
-                                <Button
-                                    disabled={!this.state.checkedStock.length > 0}
-                                    variant="outlined" color="secondary"
-                                    onClick={() => this.deleteCheckedStock()}
-                                >
-                                    Delete
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </Paper>
+                    <PortfolioFooter
+                        classes={classes}
+                        totalValue={totalValue}
+                        noCheckedStocks={!this.state.checkedStock.length > 0}
+                        deleteCheckedStock={this.deleteCheckedStock}
+                        addStock={() => this.setState({addStockDialogOpen: true})}
+                    />
                 </Card>
                 <AddStockDialog
                     portfolioName={name}
