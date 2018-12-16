@@ -121,6 +121,8 @@ class Portfolio extends Component {
         const {rows} = this.state;
         if (!rows.map(row => row.name).includes(name)) {
             rows.push({name: name, value: 123, quantity: amount, total: amount * 123});
+            //Sort the rows by name
+            rows.sort((a,b) => a.name.localeCompare(b.name) || a.name.localeCompare(b.name));
             this.setState({addStockDialogOpen: false, totalValue: this.getTotalValue()})
         } else {
             alert("The stock " + name + " already exists!")
