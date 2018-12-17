@@ -16,7 +16,7 @@ class PortfolioTable extends Component {
     }
 
     render() {
-        const { classes, stocks, checkMarkClick } = this.props;
+        const { classes, stocks, checkMarkClick, currencySymbol } = this.props;
         return (
             <Table>
                 <colgroup>
@@ -43,9 +43,9 @@ class PortfolioTable extends Component {
                                     <Checkbox className={classes.checkbox} onChange={() => checkMarkClick(row.name)}/>
                                 </TableCell>
                                 <TableCell className={classes.tableCell}>{row.name}</TableCell>
-                                <TableCell className={classes.tableCell}>{row.value}</TableCell>
+                                <TableCell className={classes.tableCell}>{row.value.toFixed(2)}{currencySymbol}</TableCell>
                                 <TableCell className={classes.tableCell}>{row.quantity}</TableCell>
-                                <TableCell className={classes.tableCell}>{row.total}</TableCell>
+                                <TableCell className={classes.tableCell}>{row.total.toFixed(2)}{currencySymbol}</TableCell>
                             </TableRow>
                         );
                     })}

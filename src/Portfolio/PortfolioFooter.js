@@ -6,10 +6,17 @@ import Paper from "@material-ui/core/Paper";
 
 class PortfolioFooter extends Component {
     render() {
-        const {classes, totalValue, addStock, noCheckedStocks, deleteCheckedStock} = this.props;
+        const {
+            classes,
+            totalValue,
+            addStock,
+            noCheckedStocks,
+            deleteCheckedStock,
+            currencySymbol,
+        } = this.props;
         return (
             <Paper className={classes.portfolioFooter}>
-                <Typography variant="caption">Total value of portfolio: {totalValue}</Typography>
+                <Typography variant="caption">Total value of portfolio: {totalValue.toFixed(2)}{currencySymbol}</Typography>
                 <Grid container justify={"space-evenly"}>
                     <Grid item>
                         <Button

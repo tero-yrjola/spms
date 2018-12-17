@@ -7,51 +7,8 @@ import PortfolioTable from "./PortfolioTable";
 import AddStockDialog from "./AddStockDialog";
 import PortfolioHeader from "./PortfolioHeader";
 import PortfolioFooter from "./PortfolioFooter";
-
-const styles = theme => ({
-    deleteButton: {
-        padding: 0,
-    },
-    portfolio: {
-        width: "400px",
-        height: "325px",    // Because the div containing the delete button is 25px and the portfolioBase is 300px
-        ...theme.mixins.gutters(),
-        paddingTop: theme.spacing.unit * 2,
-        paddingBottom: theme.spacing.unit * 2,
-    },
-    portfolioBase: {
-        height: "300px",
-    },
-    portfolioHeader: {
-        ...theme.mixins.gutters(),
-        paddingTop: theme.spacing.unit,
-        paddingBottom: theme.spacing.unit,
-        marginBottom: "3px",
-    },
-    portfolioFooter: {
-        padding: theme.spacing.unit,
-    },
-    tableWrapper: {
-        height: "175px",
-        overflowY: "scroll",
-    },
-    tableCell: {
-        width: "20px",
-        padding: "2px",
-        textAlign: "center",
-    },
-    tableHead: {
-        backgroundColor: "#fff",
-        position: "sticky",
-        top: 0
-    },
-    tableRow: {
-        height: "50px",
-    },
-    checkbox: {
-        padding: "8px",
-    }
-});
+import styles from "./PostfolioStyles";
+import {getUSDToEur} from "../Alphavantage";
 
 const debugRows = [
     {name: 'Eclair', value: 262, quantity: 16.0, total: 24},
@@ -62,16 +19,18 @@ const debugRows = [
     {name: 'Eclair6', value: 262, quantity: 16.0, total: 24},
 ];
 
+
 class Portfolio extends Component {
     constructor(props) {
         super(props);
         this.state = {
             eurosSelected: true,
-            totalValue: "",
+            totalValue: 0,
             checkedStock: [],
             deleteStockButtonEnabled: false,
             addStockDialogOpen: false,
             rows: debugRows,
+            usdToEurRatio: 0,
         };
 
         this.checkMarkClick = this.checkMarkClick.bind(this);
@@ -79,10 +38,17 @@ class Portfolio extends Component {
         this.addStock = this.addStock.bind(this);
         this.getTotalValue = this.getTotalValue.bind(this);
         this.changeCurrency = this.changeCurrency.bind(this);
+        this.reCalculateValues = this.reCalculateValues.bind(this);
     }
 
     componentDidMount() {
-        this.setState({totalValue: this.getTotalValue()})
+        getUSDToEur().then((response) =>{
+            const exchangeRate = JSON.parse(response)["Realtime Currency Exchange Rate"]["5. Exchange Rate"];
+            this.setState({usdToEurRatio: exchangeRate}, ()=> {
+                this.setState({totalValue: this.getTotalValue()});
+                this.reCalculateValues();
+            });
+        });
     }
 
     getTotalValue() {
@@ -90,12 +56,27 @@ class Portfolio extends Component {
     }
 
     changeCurrency(event) {
+        const {eurosSelected} = this.state;
         const selectedCurrency = event.currentTarget.value;
-        if (selectedCurrency === "euro")
-            this.setState({eurosSelected: true});
-        else if (selectedCurrency === "dollar") {
-            this.setState({eurosSelected: false});
+        if (selectedCurrency === "euro" && !eurosSelected)
+            this.setState({eurosSelected: true}, () => {
+                this.reCalculateValues();
+            });
+        else if (selectedCurrency === "dollar" && eurosSelected) {
+            this.setState({eurosSelected: false}, () => {
+                this.reCalculateValues();
+            });
         }
+    }
+
+    reCalculateValues(){
+        const {rows, eurosSelected, usdToEurRatio} = this.state;
+        const multiplier = eurosSelected ? usdToEurRatio : 1.0/usdToEurRatio;
+        rows.forEach(row => {
+            row.value = row.value*multiplier;
+            row.total = row.value * row.quantity;
+        });
+        this.setState({totalValue: this.getTotalValue()});
     }
 
     checkMarkClick(key) {
@@ -120,9 +101,11 @@ class Portfolio extends Component {
     addStock(name, amount) {
         const {rows} = this.state;
         if (!rows.map(row => row.name).includes(name)) {
-            rows.push({name: name, value: 123, quantity: amount, total: amount * 123});
+            const newRow = {name: name, value: 5, quantity: amount, total: ""};
+            newRow.total = newRow.value * amount;
+            rows.push(newRow);
             //Sort the rows by name
-            rows.sort((a,b) => a.name.localeCompare(b.name) || a.name.localeCompare(b.name));
+            rows.sort((a, b) => a.name.localeCompare(b.name) || a.name.localeCompare(b.name));
             this.setState({addStockDialogOpen: false, totalValue: this.getTotalValue()})
         } else {
             alert("The stock " + name + " already exists!")
@@ -151,6 +134,7 @@ class Portfolio extends Component {
                             classes={classes}
                             stocks={this.state.rows}
                             checkMarkClick={this.checkMarkClick}
+                            currencySymbol={eurosSelected ? "€" : "$"}
                         />
                     </div>
                     <PortfolioFooter
@@ -159,6 +143,7 @@ class Portfolio extends Component {
                         noCheckedStocks={!this.state.checkedStock.length > 0}
                         deleteCheckedStock={this.deleteCheckedStock}
                         addStock={() => this.setState({addStockDialogOpen: true})}
+                        currencySymbol={eurosSelected ? "€" : "$"}
                     />
                 </Card>
                 <AddStockDialog
