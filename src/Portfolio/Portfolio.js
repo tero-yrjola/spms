@@ -48,7 +48,7 @@ class Portfolio extends Component {
                 this.setState({totalValue: this.getTotalValue()});
                 this.reCalculateValues();
             });
-        });
+        }, (() => alert("Error connecting to Alphavantage!")));
     }
 
     getTotalValue() {
