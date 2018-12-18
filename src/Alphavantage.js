@@ -16,7 +16,6 @@ function sendGetRequest(query) {
     return new Promise((resolve, reject) => {
         const req = new XMLHttpRequest();
         const url = BASE_URL + query + "&apikey=" + API_KEY;
-        console.log(url)
         req.open("GET", url);
         req.onload = function(){
             if (req.status === 200) resolve(req.response);

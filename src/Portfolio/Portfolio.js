@@ -30,6 +30,7 @@ class Portfolio extends Component {
             EurToUsdRatio: 1,
         };
 
+        Portfolio.parseStockValueFromAAJSON = Portfolio.parseStockValueFromAAJSON.bind(this);
         this.checkMarkClick = this.checkMarkClick.bind(this);
         this.deleteCheckedStock = this.deleteCheckedStock.bind(this);
         this.addStock = this.addStock.bind(this);
@@ -37,7 +38,7 @@ class Portfolio extends Component {
         this.changeCurrency = this.changeCurrency.bind(this);
         this.reCalculateValues = this.reCalculateValues.bind(this);
         this.calculateStockAndTotalValues = this.calculateStockAndTotalValues.bind(this);
-        this.parseStockValueFromAAJSON = this.parseStockValueFromAAJSON.bind(this);
+        this.setRealTimeValueAndTotal = this.setRealTimeValueAndTotal.bind(this);
     }
 
     componentDidMount() {
@@ -52,7 +53,7 @@ class Portfolio extends Component {
         }, (() => alert("Error connecting to Alphavantage!")));
     }
 
-    parseStockValueFromAAJSON(alphaVantageJSON){
+    static parseStockValueFromAAJSON(alphaVantageJSON){
         const alphaVantageObject = JSON.parse(alphaVantageJSON);
         const latestTimeOfValue = Object.keys(alphaVantageObject["Time Series (5min)"])[0];
         return (
@@ -75,21 +76,27 @@ class Portfolio extends Component {
         const {rows} = this.state;
         let rowsProcessed = 0;
         rows.forEach(row => {
-            getUSDPriceFor(row.name).then((response) => {
-                const resp = JSON.parse(response);
-                if (resp["Note"] || resp["Error Message"]) {
-                    alert("Price for " + row.name + " not found or reached API-call-limit! Using a spoofed value of 10$.");
-                    row.value = 10;
-                } else {
-                    row.value = this.parseStockValueFromAAJSON(response);
-                }
-            }).then(() => {
+            this.setRealTimeValueAndTotal(row).then(() => {
                 rowsProcessed++;
                 if (rowsProcessed === rows.length) {
                     this.setState({totalValue: this.getTotalValue()});
                     this.reCalculateValues();
                 }
             });
+        });
+    }
+
+    setRealTimeValueAndTotal(stockRow) {
+        return getUSDPriceFor(stockRow.name).then((response) => {
+            const resp = JSON.parse(response);
+            if (resp["Note"] || resp["Error Message"]) {
+                alert("Price for " + stockRow.name + " not found or reached API-call-limit! Using a spoofed value of 10$.");
+                stockRow.value = 10;
+                stockRow.total = stockRow.value * stockRow.quantity
+            } else {
+                stockRow.value = Portfolio.parseStockValueFromAAJSON(response);
+                stockRow.total = stockRow.value * stockRow.quantity
+            }
         });
     }
 
@@ -139,12 +146,13 @@ class Portfolio extends Component {
     addStock(name, amount) {
         const {rows} = this.state;
         if (!rows.map(row => row.name).includes(name)) {
-            const newRow = {name: name, value: 5, quantity: amount, total: ""};
-            newRow.total = newRow.value * amount;
+            const newRow = {name: name, quantity: amount};
             rows.push(newRow);
-            //Sort the rows by name
-            rows.sort((a, b) => a.name.localeCompare(b.name) || a.name.localeCompare(b.name));
-            this.setState({addStockDialogOpen: false, totalValue: this.getTotalValue()})
+            this.setRealTimeValueAndTotal(newRow).then(() => {
+                //Sort the rows by name
+                rows.sort((a, b) => a.name.localeCompare(b.name) || a.name.localeCompare(b.name));
+                this.setState({addStockDialogOpen: false, totalValue: this.getTotalValue()})
+            });
         } else {
             alert("The stock " + name + " already exists!")
         }
