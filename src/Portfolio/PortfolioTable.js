@@ -17,6 +17,12 @@ class PortfolioTable extends Component {
 
     render() {
         const { classes, stocks, checkMarkClick, currencySymbol } = this.props;
+        stocks.forEach(row => {
+            if (!row.value){
+                row.value = 0;
+                row.total = 0;
+            }
+        })
         return (
             <Table>
                 <colgroup>
@@ -43,7 +49,7 @@ class PortfolioTable extends Component {
                                     <Checkbox className={classes.checkbox} onChange={() => checkMarkClick(row.name)}/>
                                 </TableCell>
                                 <TableCell className={classes.tableCell}>{row.name}</TableCell>
-                                <TableCell className={classes.tableCell}>{row.value.toFixed(2)}{currencySymbol}</TableCell>
+                                <TableCell className={classes.tableCell}>{parseFloat(row.value).toFixed(2)}{currencySymbol}</TableCell>
                                 <TableCell className={classes.tableCell}>{row.quantity}</TableCell>
                                 <TableCell className={classes.tableCell}>{row.total.toFixed(2)}{currencySymbol}</TableCell>
                             </TableRow>

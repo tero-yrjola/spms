@@ -8,15 +8,12 @@ import AddStockDialog from "./AddStockDialog";
 import PortfolioHeader from "./PortfolioHeader";
 import PortfolioFooter from "./PortfolioFooter";
 import styles from "./PostfolioStyles";
-import {getUSDToEur} from "../Alphavantage";
+import {getUSDPriceFor, getEurToUSD} from "../Alphavantage";
 
 const debugRows = [
-    {name: 'Eclair', value: 262, quantity: 16.0, total: 24},
-    {name: 'Eclair2', value: 262, quantity: 16.0, total: 24},
-    {name: 'Eclair3', value: 262, quantity: 16.0, total: 24},
-    {name: 'Eclair4', value: 262, quantity: 16.0, total: 24},
-    {name: 'Eclair5', value: 262, quantity: 16.0, total: 24},
-    {name: 'Eclair6', value: 262, quantity: 16.0, total: 24},
+    {name: 'MSFT', quantity: 16.0},
+    /*{name: 'NOK', quantity: 16.0},
+    {name: 'FDX', quantity: 16.0},*/
 ];
 
 
@@ -30,7 +27,7 @@ class Portfolio extends Component {
             deleteStockButtonEnabled: false,
             addStockDialogOpen: false,
             rows: debugRows,
-            usdToEurRatio: 0,
+            EurToUsdRatio: 1,
         };
 
         this.checkMarkClick = this.checkMarkClick.bind(this);
@@ -39,20 +36,61 @@ class Portfolio extends Component {
         this.getTotalValue = this.getTotalValue.bind(this);
         this.changeCurrency = this.changeCurrency.bind(this);
         this.reCalculateValues = this.reCalculateValues.bind(this);
+        this.calculateStockAndTotalValues = this.calculateStockAndTotalValues.bind(this);
+        this.parseStockValueFromAAJSON = this.parseStockValueFromAAJSON.bind(this);
     }
 
     componentDidMount() {
-        getUSDToEur().then((response) =>{
-            const exchangeRate = JSON.parse(response)["Realtime Currency Exchange Rate"]["5. Exchange Rate"];
-            this.setState({usdToEurRatio: exchangeRate}, ()=> {
-                this.setState({totalValue: this.getTotalValue()});
-                this.reCalculateValues();
-            });
+        getEurToUSD().then((response) => {
+            //If the response doesn't have the expected property, an error has been thrown from Alphavantage
+            if (JSON.parse(response)["Realtime Currency Exchange Rate"] != null) {
+                const exchangeRate = JSON.parse(response)["Realtime Currency Exchange Rate"]["5. Exchange Rate"];
+                this.setState({EurToUsdRatio: exchangeRate}, () => {
+                    this.calculateStockAndTotalValues();
+                });
+            } else alert("Cannot get EUR-to-USD-ratio! " + JSON.parse(response)["Note"])
         }, (() => alert("Error connecting to Alphavantage!")));
+    }
+
+    parseStockValueFromAAJSON(alphaVantageJSON){
+        const alphaVantageObject = JSON.parse(alphaVantageJSON);
+        const latestTimeOfValue = Object.keys(alphaVantageObject["Time Series (5min)"])[0];
+        return (
+                    parseFloat(alphaVantageObject["Time Series (5min)"][latestTimeOfValue]["1. open"]) +
+                    parseFloat(alphaVantageObject["Time Series (5min)"][latestTimeOfValue]["2. high"]) +
+                    parseFloat(alphaVantageObject["Time Series (5min)"][latestTimeOfValue]["3. low"]) +
+                    parseFloat(alphaVantageObject["Time Series (5min)"][latestTimeOfValue]["4. close"])
+                ) / 4.0
     }
 
     getTotalValue() {
         return this.state.rows.map(stock => stock.total).reduce((a, b) => a + b);
+    }
+
+    /* For each row, fetch the 'currency to usd' -ratio from Alphavantage. If the API-limit (5 per 1 minute) is reached,
+       we use a default value of 5 (just for demo-purposes). This ratio is the value of the stock in usd.
+       Then after all rows are processed, in reCalculateValues() we calculate the total value for each row and totally.
+       Then if we need the eur-total, we multiply it again by EurToUsdRatio. */
+    calculateStockAndTotalValues() {
+        const {rows} = this.state;
+        let rowsProcessed = 0;
+        rows.forEach(row => {
+            getUSDPriceFor(row.name).then((response) => {
+                const resp = JSON.parse(response);
+                if (resp["Note"] || resp["Error Message"]) {
+                    alert("Price for " + row.name + " not found or reached API-call-limit! Using a spoofed value of 10$.");
+                    row.value = 10;
+                } else {
+                    row.value = this.parseStockValueFromAAJSON(response);
+                }
+            }).then(() => {
+                rowsProcessed++;
+                if (rowsProcessed === rows.length) {
+                    this.setState({totalValue: this.getTotalValue()});
+                    this.reCalculateValues();
+                }
+            });
+        });
     }
 
     changeCurrency(event) {
@@ -69,11 +107,11 @@ class Portfolio extends Component {
         }
     }
 
-    reCalculateValues(){
-        const {rows, eurosSelected, usdToEurRatio} = this.state;
-        const multiplier = eurosSelected ? usdToEurRatio : 1.0/usdToEurRatio;
+    reCalculateValues() {
+        const {rows, eurosSelected, EurToUsdRatio} = this.state;
+        const multiplier = eurosSelected ? 1.0/ EurToUsdRatio : EurToUsdRatio;
         rows.forEach(row => {
-            row.value = row.value*multiplier;
+            row.value = row.value * multiplier;
             row.total = row.value * row.quantity;
         });
         this.setState({totalValue: this.getTotalValue()});
