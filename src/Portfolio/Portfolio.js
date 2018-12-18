@@ -7,15 +7,8 @@ import PortfolioTable from "./PortfolioTable";
 import AddStockDialog from "./AddStockDialog";
 import PortfolioHeader from "./PortfolioHeader";
 import PortfolioFooter from "./PortfolioFooter";
-import styles from "./PostfolioStyles";
-import {getUSDPriceFor, getEurToUSD} from "../Alphavantage";
-
-const debugRows = [
-    {name: 'MSFT', quantity: 16.0},
-    /*{name: 'NOK', quantity: 16.0},
-    {name: 'FDX', quantity: 16.0},*/
-];
-
+import styles from "./PortfolioStyles";
+import {getUSDPriceFor} from "../Alphavantage";
 
 class Portfolio extends Component {
     constructor(props) {
@@ -26,8 +19,7 @@ class Portfolio extends Component {
             checkedStock: [],
             deleteStockButtonEnabled: false,
             addStockDialogOpen: false,
-            rows: debugRows,
-            EurToUsdRatio: 1,
+            rows: [],
         };
 
         Portfolio.parseStockValueFromAAJSON = Portfolio.parseStockValueFromAAJSON.bind(this);
@@ -42,15 +34,10 @@ class Portfolio extends Component {
     }
 
     componentDidMount() {
-        getEurToUSD().then((response) => {
-            //If the response doesn't have the expected property, an error has been thrown from Alphavantage
-            if (JSON.parse(response)["Realtime Currency Exchange Rate"] != null) {
-                const exchangeRate = JSON.parse(response)["Realtime Currency Exchange Rate"]["5. Exchange Rate"];
-                this.setState({EurToUsdRatio: exchangeRate}, () => {
-                    this.calculateStockAndTotalValues();
-                });
-            } else alert("Cannot get EUR-to-USD-ratio! " + JSON.parse(response)["Note"])
-        }, (() => alert("Error connecting to Alphavantage!")));
+        const {name} = this.props;
+        this.setState({rows: JSON.parse(localStorage.getItem(name))}, () => {
+            this.setState({totalValue: this.getTotalValue()});
+        })
     }
 
     static parseStockValueFromAAJSON(alphaVantageJSON){
@@ -65,13 +52,14 @@ class Portfolio extends Component {
     }
 
     getTotalValue() {
+        if (this.state.rows.length === 0) return 0;
         return this.state.rows.map(stock => stock.total).reduce((a, b) => a + b);
     }
 
     /* For each row, fetch the 'currency to usd' -ratio from Alphavantage. If the API-limit (5 per 1 minute) is reached,
        we use a default value of 5 (just for demo-purposes). This ratio is the value of the stock in usd.
        Then after all rows are processed, in reCalculateValues() we calculate the total value for each row and totally.
-       Then if we need the eur-total, we multiply it again by EurToUsdRatio. */
+       Then if we need the eur-total, we multiply it again by eurToUsdRatio. */
     calculateStockAndTotalValues() {
         const {rows} = this.state;
         let rowsProcessed = 0;
@@ -115,8 +103,9 @@ class Portfolio extends Component {
     }
 
     reCalculateValues() {
-        const {rows, eurosSelected, EurToUsdRatio} = this.state;
-        const multiplier = eurosSelected ? 1.0/ EurToUsdRatio : EurToUsdRatio;
+        const {rows, eurosSelected} = this.state;
+        const {eurToUsdRatio} = this.props;
+        const multiplier = eurosSelected ? 1.0/ eurToUsdRatio : eurToUsdRatio;
         rows.forEach(row => {
             row.value = row.value * multiplier;
             row.total = row.value * row.quantity;
@@ -136,15 +125,18 @@ class Portfolio extends Component {
 
     deleteCheckedStock() {
         const {checkedStock, rows} = this.state;
+        const {name} = this.props;
         //Remove all stocks that are found in the checkedStock-list (e.g. remove all the selected rows)
         const newRows = rows.filter((stock) => !checkedStock.includes(stock.name));
         //Empty selected (since they are deleted) and callback the new total calculation since state-setting is async
         this.setState({rows: newRows, checkedStock: []},
             () => this.setState({totalValue: this.getTotalValue()}))
+        localStorage.setItem(name, JSON.stringify(newRows))
     }
 
     addStock(name, amount) {
         const {rows} = this.state;
+        const {name: portfolioName} = this.props;
         if (!rows.map(row => row.name).includes(name)) {
             const newRow = {name: name, quantity: amount};
             rows.push(newRow);
@@ -152,6 +144,7 @@ class Portfolio extends Component {
                 //Sort the rows by name
                 rows.sort((a, b) => a.name.localeCompare(b.name) || a.name.localeCompare(b.name));
                 this.setState({addStockDialogOpen: false, totalValue: this.getTotalValue()})
+                localStorage.setItem(portfolioName, JSON.stringify(rows));
             });
         } else {
             alert("The stock " + name + " already exists!")
@@ -159,12 +152,12 @@ class Portfolio extends Component {
     }
 
     render() {
-        const {classes, name} = this.props;
+        const {classes, name, deletePortfolio} = this.props;
         const {addStockDialogOpen, eurosSelected, totalValue} = this.state;
         return (
             <div className={classes.portfolio}>
                 <div style={{textAlign: "right", height: "25px"}}>
-                    <IconButton className={classes.deleteButton} aria-label="Delete">
+                    <IconButton onClick={() => deletePortfolio(name)} className={classes.deleteButton} aria-label="Delete">
                         <DeleteIcon color="secondary"/>
                     </IconButton>
                 </div>

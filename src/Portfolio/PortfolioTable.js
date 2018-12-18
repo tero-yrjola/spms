@@ -23,10 +23,7 @@ class PortfolioTable extends Component {
                 row.total = 0;
             }
         });
-        stocks.forEach(row => {
-            console.log(row);
-            }
-        );
+        
         return (
             <Table>
                 <colgroup>
