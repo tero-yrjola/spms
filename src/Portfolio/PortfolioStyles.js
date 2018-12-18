@@ -20,6 +20,8 @@ const styles = theme => ({
     },
     portfolioFooter: {
         padding: theme.spacing.unit,
+        //base(300px) - header(55px) - table(175px) - padding-top(8px) - padding-bottom(8px)
+        height: "54px",
     },
     tableWrapper: {
         height: "175px",
