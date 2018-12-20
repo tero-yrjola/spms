@@ -1,13 +1,15 @@
 import React, {Component} from 'react';
 import './App.css';
 import Portfolio from "./Portfolio/Portfolio";
-import Button from "@material-ui/core/es/Button/Button";
 import {getEurToUSD} from "./Alphavantage";
 import Dialog from "@material-ui/core/es/Dialog/Dialog";
+import AddIcon from '@material-ui/icons/Add';
 import DialogTitle from "@material-ui/core/DialogTitle";
 import DialogContent from "@material-ui/core/DialogContent";
 import TextField from "@material-ui/core/TextField";
 import DialogActions from "@material-ui/core/DialogActions";
+import Fab from '@material-ui/core/Fab';
+import Button from "@material-ui/core/es/Button";
 
 class Base extends Component {
     constructor(props) {
@@ -37,7 +39,7 @@ class Base extends Component {
 
     deletePortfolio(portfolioName) {
         const {portfolios} = this.state;
-        if (portfolios.includes(portfolioName)){
+        if (portfolios.includes(portfolioName)) {
             portfolios.splice(portfolios.indexOf(portfolioName), 1);
             localStorage.removeItem(portfolioName);
             this.forceUpdate();
@@ -61,37 +63,46 @@ class Base extends Component {
     render() {
         const {portfolios, eurToUsdRatio, newPortfolioDialogIsOpen} = this.state;
         return (
-            <div className="Base">
-                <Button onClick={() => this.setState({newPortfolioDialogIsOpen: true})}>
+            <div>
+                <Fab
+                    style={{margin: "20px"}}
+                    color="primary"
+                    aria-label="Add"
+                    onClick={() => this.setState({newPortfolioDialogIsOpen: true})}
+                    variant="extended"
+                >
                     Add new portfolio
-                </Button>
-                {portfolios.map(portfolio => {
-                    return <Portfolio
-                        deletePortfolio={(name) => this.deletePortfolio(name)}
-                        key={portfolio}
-                        name={portfolio}
-                        eurToUsdRatio={eurToUsdRatio}
-                    />
-                })}
-                <Dialog open={newPortfolioDialogIsOpen} aria-labelledby="form-dialog-title">
-                    <DialogTitle id="form-dialog-title">Add new portfolio</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            onChange={this.handleChange}
-                            autoFocus
-                            margin="dense"
-                            label="Portfolio name"
+                    <AddIcon />
+                </Fab>
+                <div className="Base">
+                    {portfolios.map(portfolio => {
+                        return <Portfolio
+                            deletePortfolio={(name) => this.deletePortfolio(name)}
+                            key={portfolio}
+                            name={portfolio}
+                            eurToUsdRatio={eurToUsdRatio}
                         />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => this.setState({newPortfolioDialogIsOpen: false})} color="primary">
-                            Cancel
-                        </Button>
-                        <Button type="submit" onClick={this.addPortfolioAndCloseDialog} color="primary">
-                            Add
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                    })}
+                    <Dialog open={newPortfolioDialogIsOpen} aria-labelledby="form-dialog-title">
+                        <DialogTitle id="form-dialog-title">Add new portfolio</DialogTitle>
+                        <DialogContent>
+                            <TextField
+                                onChange={this.handleChange}
+                                autoFocus
+                                margin="dense"
+                                label="Portfolio name"
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => this.setState({newPortfolioDialogIsOpen: false})} color="primary">
+                                Cancel
+                            </Button>
+                            <Button type="submit" onClick={this.addPortfolioAndCloseDialog} color="primary">
+                                Add
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                </div>
             </div>
         );
     }
