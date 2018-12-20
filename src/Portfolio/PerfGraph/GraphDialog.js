@@ -18,6 +18,7 @@ class GraphDialog extends Component {
     }
 
     componentDidUpdate(prevProps) {
+        /* Fetch the data only when the dialog open to avoid irrelevant data-fetching */
         if (prevProps.isOpen === false && this.props.isOpen === true) {
             const {stockNames} = this.props;
             const {stockData} = this.state;
@@ -42,11 +43,11 @@ class GraphDialog extends Component {
         return dates.map(date => {
             return {
                 date: date,
-                value: (
+                value: ((
                     parseFloat(alphaVantageObject["Time Series (Daily)"][date]["1. open"]) +
                     parseFloat(alphaVantageObject["Time Series (Daily)"][date]["2. high"]) +
                     parseFloat(alphaVantageObject["Time Series (Daily)"][date]["3. low"]) +
-                    parseFloat(alphaVantageObject["Time Series (Daily)"][date]["4. close"])
+                    parseFloat(alphaVantageObject["Time Series (Daily)"][date]["4. close"]))
                     / 4.0).toFixed(2)
             }
         });

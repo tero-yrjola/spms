@@ -20,7 +20,7 @@ class PerformanceGraph extends Component {
         return (
             <Plot
                 data={plotlyData}
-                layout={ {width: "75%", height: "75%"} }
+                layout={ {width: "75%", height: "75%", yaxis: { title: "Price in USD"} } }
             />
         );
     }

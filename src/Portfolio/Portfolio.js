@@ -27,8 +27,7 @@ class Portfolio extends Component {
         Portfolio.parseStockValueFromAVJSON = Portfolio.parseStockValueFromAVJSON.bind(this);
         this.checkMarkClick = this.checkMarkClick.bind(this);
         this.deleteCheckedStock = this.deleteCheckedStock.bind(this);
-        this.addStock = this.addStock.bind(this);
-        this.showStockGraph = this.showStockGraph.bind(this);
+        this.addStock = this.addStock.bind(this)
         this.getTotalValue = this.getTotalValue.bind(this);
         this.changeCurrency = this.changeCurrency.bind(this);
         this.reCalculateValues = this.reCalculateValues.bind(this);
@@ -133,16 +132,17 @@ class Portfolio extends Component {
         const newRows = rows.filter((stock) => !checkedStock.includes(stock.name));
         //Empty selected (since they are deleted) and callback the new total calculation since state-setting is async
         this.setState({rows: newRows, checkedStock: []},
-            () => this.setState({totalValue: this.getTotalValue()}))
+            () => this.setState({totalValue: this.getTotalValue()}));
         localStorage.setItem(name, JSON.stringify(newRows))
     }
 
-    showStockGraph(){
-
-    }
-
     addStock(name, amount) {
+        if (name.length < 1) return;
         const {rows} = this.state;
+        if (rows.length >= 50){
+            alert("You can only have 50 stock in one portfolio!");
+            return;
+        }
         const {name: portfolioName} = this.props;
         if (!rows.map(row => row.name).includes(name)) {
             const newRow = {name: name, quantity: amount};

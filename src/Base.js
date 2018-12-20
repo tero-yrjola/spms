@@ -48,6 +48,11 @@ class Base extends Component {
 
     addPortfolioAndCloseDialog() {
         const {portfolios, newPortfolioName} = this.state;
+        if (portfolios.length >= 10){
+            alert("You already have 10 portfolios! Delete some in order to create new ones");
+            return;
+        }
+        if(newPortfolioName.length < 1) return;
         if (portfolios.includes(newPortfolioName)) alert("Portfolio " + newPortfolioName + " already exists!");
         else {
             portfolios.push(newPortfolioName);
@@ -63,7 +68,7 @@ class Base extends Component {
     render() {
         const {portfolios, eurToUsdRatio, newPortfolioDialogIsOpen} = this.state;
         return (
-            <div>
+            <div style={{textAlign: "center"}}>
                 <Fab
                     style={{margin: "20px"}}
                     color="primary"
