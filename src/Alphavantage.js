@@ -6,6 +6,11 @@ export const getUSDPriceFor = (symbol) => {
     return(sendGetRequest(query));
 };
 
+export const getLast100PricesFor = (symbol) => {
+    const query = "function=TIME_SERIES_DAILY&symbol=" + symbol;
+    return(sendGetRequest(query));
+};
+
 export const getEurToUSD = () => {
     const query = "function=CURRENCY_EXCHANGE_RATE&to_currency=USD&from_currency=EUR";
     return(sendGetRequest(query));

@@ -13,6 +13,7 @@ class PortfolioFooter extends Component {
             noCheckedStocks,
             deleteCheckedStock,
             currencySymbol,
+            openGraph,
         } = this.props;
         return (
             <Paper className={classes.portfolioFooter}>
@@ -26,7 +27,7 @@ class PortfolioFooter extends Component {
                         </Button>
                     </Grid>
                     <Grid item>
-                        <Button variant="contained">perf. Graph</Button>
+                        <Button onClick={openGraph} variant="contained">perf. Graph</Button>
                     </Grid>
                     <Grid item>
                         <Button

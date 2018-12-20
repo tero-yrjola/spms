@@ -39,14 +39,14 @@ class AddStockDialog extends Component {
     };
 
     render() {
-        const {name, isOpen, closeDialog, submitStock} = this.props;
+        const {portfolioName, isOpen, closeDialog, submitStock} = this.props;
         const {stockName, stockAmount} = this.state;
         return (
             <Dialog
                 open={isOpen}
                 aria-labelledby="form-dialog-title"
             >
-                <DialogTitle id="form-dialog-title">Adding stock to portfolio: {name}</DialogTitle>
+                <DialogTitle id="form-dialog-title">Adding stock to portfolio: {portfolioName}</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Please enter your new stock's name and quantity below:

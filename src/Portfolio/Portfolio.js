@@ -7,6 +7,7 @@ import PortfolioTable from "./PortfolioTable";
 import AddStockDialog from "./AddStockDialog";
 import PortfolioHeader from "./PortfolioHeader";
 import PortfolioFooter from "./PortfolioFooter";
+import GraphDialog from "./PerfGraph/GraphDialog";
 import styles from "./PortfolioStyles";
 import {getUSDPriceFor} from "../Alphavantage";
 
@@ -19,13 +20,15 @@ class Portfolio extends Component {
             checkedStock: [],
             deleteStockButtonEnabled: false,
             addStockDialogOpen: false,
+            graphDialogOpen: false,
             rows: [],
         };
 
-        Portfolio.parseStockValueFromAAJSON = Portfolio.parseStockValueFromAAJSON.bind(this);
+        Portfolio.parseStockValueFromAVJSON = Portfolio.parseStockValueFromAVJSON.bind(this);
         this.checkMarkClick = this.checkMarkClick.bind(this);
         this.deleteCheckedStock = this.deleteCheckedStock.bind(this);
         this.addStock = this.addStock.bind(this);
+        this.showStockGraph = this.showStockGraph.bind(this);
         this.getTotalValue = this.getTotalValue.bind(this);
         this.changeCurrency = this.changeCurrency.bind(this);
         this.reCalculateValues = this.reCalculateValues.bind(this);
@@ -40,7 +43,7 @@ class Portfolio extends Component {
         })
     }
 
-    static parseStockValueFromAAJSON(alphaVantageJSON){
+    static parseStockValueFromAVJSON(alphaVantageJSON){
         const alphaVantageObject = JSON.parse(alphaVantageJSON);
         const latestTimeOfValue = Object.keys(alphaVantageObject["Time Series (5min)"])[0];
         return (
@@ -82,7 +85,7 @@ class Portfolio extends Component {
                 stockRow.value = 10;
                 stockRow.total = stockRow.value * stockRow.quantity
             } else {
-                stockRow.value = Portfolio.parseStockValueFromAAJSON(response);
+                stockRow.value = Portfolio.parseStockValueFromAVJSON(response);
                 stockRow.total = stockRow.value * stockRow.quantity
             }
         });
@@ -134,6 +137,10 @@ class Portfolio extends Component {
         localStorage.setItem(name, JSON.stringify(newRows))
     }
 
+    showStockGraph(){
+
+    }
+
     addStock(name, amount) {
         const {rows} = this.state;
         const {name: portfolioName} = this.props;
@@ -143,7 +150,7 @@ class Portfolio extends Component {
             this.setRealTimeValueAndTotal(newRow).then(() => {
                 //Sort the rows by name
                 rows.sort((a, b) => a.name.localeCompare(b.name) || a.name.localeCompare(b.name));
-                this.setState({addStockDialogOpen: false, totalValue: this.getTotalValue()})
+                this.setState({addStockDialogOpen: false, totalValue: this.getTotalValue()});
                 localStorage.setItem(portfolioName, JSON.stringify(rows));
             });
         } else {
@@ -153,7 +160,7 @@ class Portfolio extends Component {
 
     render() {
         const {classes, name, deletePortfolio} = this.props;
-        const {addStockDialogOpen, eurosSelected, totalValue} = this.state;
+        const {addStockDialogOpen, eurosSelected, totalValue, graphDialogOpen, rows} = this.state;
         return (
             <div className={classes.portfolio}>
                 <div style={{textAlign: "right", height: "25px"}}>
@@ -171,7 +178,7 @@ class Portfolio extends Component {
                     <div className={classes.tableWrapper}>
                         <PortfolioTable
                             classes={classes}
-                            stocks={this.state.rows}
+                            stocks={rows}
                             checkMarkClick={this.checkMarkClick}
                             currencySymbol={eurosSelected ? "€" : "$"}
                         />
@@ -182,6 +189,7 @@ class Portfolio extends Component {
                         noCheckedStocks={!this.state.checkedStock.length > 0}
                         deleteCheckedStock={this.deleteCheckedStock}
                         addStock={() => this.setState({addStockDialogOpen: true})}
+                        openGraph={() => this.setState({graphDialogOpen: true})}
                         currencySymbol={eurosSelected ? "€" : "$"}
                     />
                 </Card>
@@ -190,6 +198,12 @@ class Portfolio extends Component {
                     isOpen={addStockDialogOpen}
                     closeDialog={() => this.setState({addStockDialogOpen: false})}
                     submitStock={this.addStock}
+                />
+                <GraphDialog
+                    stockNames={rows.map(row => row.name)}
+                    portfolioName={name}
+                    isOpen={graphDialogOpen}
+                    closeDialog={() => this.setState({graphDialogOpen: false})}
                 />
             </div>
         );
