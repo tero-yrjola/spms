@@ -37,9 +37,15 @@ class Portfolio extends Component {
 
     componentDidMount() {
         const {name} = this.props;
-        this.setState({rows: JSON.parse(localStorage.getItem(name))}, () => {
-            this.setState({totalValue: this.getTotalValue()});
-        })
+        let rows = [];
+        try {
+            rows = JSON.parse(localStorage.getItem(name));
+            this.setState({rows: rows}, () => {
+                this.setState({totalValue: this.getTotalValue()});
+            });
+        } catch (e) {
+            alert("Error fetching the rows of " + name + ".");
+        }
     }
 
     static parseStockValueFromAVJSON(alphaVantageJSON){
