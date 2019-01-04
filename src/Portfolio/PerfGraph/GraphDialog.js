@@ -26,7 +26,7 @@ class GraphDialog extends Component {
             stockNames.forEach(stockName => {
                 getLast100PricesFor(stockName).then(response => {
                     const stock = GraphDialog.parseStockValuesFromAVJSON(response);
-                    if (stock.length == 0) alert(stockName + " could not be fetched due to API-limit.")
+                    if (stock.length === 0) alert(stockName + " could not be fetched due to API-limit.")
                     stocksProcessed++;
                     stockData[stockName] = stock;
                    if(stocksProcessed === stockNames.length){

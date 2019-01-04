@@ -24,9 +24,11 @@ class Base extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.deletePortfolio = this.deletePortfolio.bind(this);
         this.addPortfolioAndCloseDialog = this.addPortfolioAndCloseDialog.bind(this);
+        this.cleanLocalStorageFromNonPortfolios = this.cleanLocalStorageFromNonPortfolios.bind(this);
     }
 
     componentDidMount() {
+       this.cleanLocalStorageFromNonPortfolios();
         this.setState({portfolios: Object.keys({...localStorage})});
         getEurToUSD().then((response) => {
             //If the response doesn't have the expected property, an error has been thrown from Alphavantage
@@ -35,6 +37,21 @@ class Base extends Component {
                 this.setState({eurToUsdRatio: exchangeRate});
             } else alert("Cannot get EUR-to-USD-ratio! " + JSON.parse(response)["Note"])
         }, (() => alert("Error connecting to Alphavantage!")));
+    }
+
+    cleanLocalStorageFromNonPortfolios(){
+        const localStoragePortfolios = Object.keys({...localStorage});
+        localStoragePortfolios.forEach(portfolioName => {
+            const portfolio = JSON.parse(localStorage.getItem(portfolioName));
+            if (typeof portfolio !== "object") {
+                localStorage.removeItem(portfolioName);
+            } else
+                portfolio.forEach(stock => {
+                    if (!(stock["value"]) || !(stock["total"])){
+                        localStorage.removeItem(portfolioName);
+                    }
+                })
+        });
     }
 
     deletePortfolio(portfolioName) {
